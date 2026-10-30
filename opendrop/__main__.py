@@ -19,4 +19,4 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from opendrop import cli
 
-cli.main()
+raise SystemExit(cli.main())

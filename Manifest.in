@@ -6,3 +6,15 @@ prune .git
 prune build
 prune dist
 recursive-exclude *.egg-info *
+
+include README-WINDOWS.md WINDOWS-STATUS.md requirements-windows.txt
+recursive-include native *.c *.h *.inc *.md *.inf *.ps1 *.rs *.txt Cargo.toml Cargo.lock CMakeLists.txt
+recursive-include tools *.ps1 *.py
+recursive-include tests/windows *.py *.md *.txt *.cpio
+
+recursive-include tests/native *.py
+
+prune native/awdl/target
+
+recursive-include app *.cs *.xaml *.py *.ico *.manifest *.config *.md
+include DESKTOP-APP.md

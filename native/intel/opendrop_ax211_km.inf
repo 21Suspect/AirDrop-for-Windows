@@ -1,0 +1,56 @@
+; SPDX-License-Identifier: GPL-3.0-or-later
+[Version]
+Signature="$Windows NT$"
+Class=OpenDropRadio
+ClassGuid={B9D4D5BE-57FB-4611-948B-26C1FDC81AE4}
+Provider=%Provider%
+CatalogFile=opendrop_ax211_km.cat
+DriverVer=10/30/2026,0.1.0.0
+PnpLockdown=1
+[ClassInstall32]
+AddReg=ClassReg
+[ClassReg]
+HKR,,,,%ClassName%
+HKR,,Icon,,"-5"
+[Manufacturer]
+%Provider%=Models,NTamd64.10.0...26100
+[Models.NTamd64.10.0...26100]
+%DeviceDesc%=Ax211,PCI\VEN_8086&DEV_7A70&SUBSYS_00948086
+[SourceDisksNames]
+1=%DiskName%
+[SourceDisksFiles]
+opendrop_ax211_km.sys=1
+[DestinationDirs]
+DriverCopy=13
+[Ax211.NT]
+CopyFiles=DriverCopy
+[DriverCopy]
+opendrop_ax211_km.sys
+[Ax211.NT.HW]
+AddReg=DeviceSecurity,MessageInterrupts
+[MessageInterrupts]
+; Every cause is routed to one OS-owned MSI-X message.
+HKR,Interrupt Management\MessageSignaledInterruptProperties,MSISupported,0x00010001,1
+HKR,Interrupt Management\MessageSignaledInterruptProperties,MessageNumberLimit,0x00010001,1
+[DeviceSecurity]
+HKR,,Security,,"D:P(A;;GA;;;SY)(A;;GA;;;BA)"
+[Ax211.NT.Services]
+AddService=opendrop_ax211_km,0x00000002,DriverService
+[DriverService]
+DisplayName=%DeviceDesc%
+ServiceType=1
+StartType=3
+ErrorControl=1
+ServiceBinary=%13%\opendrop_ax211_km.sys
+AddReg=DmaReg
+[DmaReg]
+HKR,Parameters,DmaRemappingCompatible,0x00010001,1
+[Ax211.NT.Wdf]
+KmdfService=opendrop_ax211_km,KmdfSection
+[KmdfSection]
+KmdfLibraryVersion=1.33
+[Strings]
+Provider="OpenDrop Windows development"
+ClassName="OpenDrop development radios"
+DeviceDesc="AX211 DMA allocation development driver"
+DiskName="OpenDrop AX211 development driver"

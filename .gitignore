@@ -106,3 +106,35 @@ venv.bak/
 
 ### IDEA ###
 .idea/
+
+# Local Windows runtime / diagnostics
+.opendrop-state/
+received/
+radio-api-probe*.json
+radio-evidence.json
+
+# Rust build output
+native/awdl/target/
+
+# Required source manifest for the native WPF application
+!app/app.manifest
+
+# Private identities, signing material and development artifacts
+*.key
+*.pfx
+*.p12
+*.sys
+*.cat
+*.pdb
+*.obj
+*.dll
+*.exe
+*.log
+app-config.json
+build.json
+settings.json
+history.json
+session.json
+sessions/
+firmware/
+.license-cache/

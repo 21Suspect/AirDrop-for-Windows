@@ -25,14 +25,18 @@ import sys
 import threading
 import time
 
-from .client import AirDropBrowser, AirDropClient
-from .config import AirDropConfig, AirDropReceiverFlags
-from .server import AirDropServer
+if sys.platform != "win32":
+    from .client import AirDropBrowser, AirDropClient
+    from .config import AirDropConfig, AirDropReceiverFlags
+    from .server import AirDropServer
 
 logger = logging.getLogger(__name__)
 
 
 def main():
+    if sys.platform == "win32":
+        from .windows.cli import main as windows_main
+        return windows_main(sys.argv[1:])
     AirDropCli(sys.argv[1:])
 
 

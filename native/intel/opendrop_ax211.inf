@@ -1,0 +1,52 @@
+; SPDX-License-Identifier: GPL-3.0-or-later
+[Version]
+Signature="$Windows NT$"
+Class=OpenDropRadio
+ClassGuid={B9D4D5BE-57FB-4611-948B-26C1FDC81AE4}
+Provider=%Provider%
+CatalogFile=opendrop_ax211.cat
+DriverVer=10/30/2026,0.1.0.0
+PnpLockdown=1
+[ClassInstall32]
+AddReg=ClassReg
+[ClassReg]
+HKR,,,,%ClassName%
+HKR,,Icon,,"-5"
+[Manufacturer]
+%Provider%=Models,NTamd64.10.0...26100
+[Models.NTamd64.10.0...26100]
+%DeviceDesc%=Ax211,PCI\VEN_8086&DEV_7A70&SUBSYS_00948086
+[SourceDisksNames]
+1=%DiskName%
+[SourceDisksFiles]
+opendrop_ax211.dll=1
+[DestinationDirs]
+Ax211Copy=13
+[Ax211.NT]
+CopyFiles=Ax211Copy
+Include=WUDFRD.inf
+Needs=WUDFRD.NT
+[Ax211Copy]
+opendrop_ax211.dll
+[Ax211.NT.HW]
+Include=WUDFRD.inf
+Needs=WUDFRD.NT.HW
+AddReg=DeviceSecurity
+[DeviceSecurity]
+HKR,,Security,,"D:P(A;;GA;;;SY)(A;;GA;;;BA)"
+[Ax211.NT.Services]
+Include=WUDFRD.inf
+Needs=WUDFRD.NT.Services
+[Ax211.NT.Wdf]
+UmdfService=opendrop_ax211,Ax211Service
+UmdfServiceOrder=opendrop_ax211
+UmdfDirectHardwareAccess=AllowDirectHardwareAccess
+UmdfRegisterAccessMode=RegisterAccessUsingUserModeMapping
+[Ax211Service]
+UmdfLibraryVersion=2.33.0
+ServiceBinary=%13%\opendrop_ax211.dll
+[Strings]
+Provider="OpenDrop Windows development"
+ClassName="OpenDrop development radios"
+DeviceDesc="AX211 identity-only development driver"
+DiskName="OpenDrop AX211 development driver"

@@ -1,0 +1,3 @@
+cryptography>=46,<51
+ifaddr==0.2.0
+zeroconf>=0.151,<0.152

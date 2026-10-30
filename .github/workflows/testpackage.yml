@@ -1,44 +1,46 @@
-name: Test package
+name: Receiver and firmware tests
 
 on: [push, pull_request]
 
-jobs:
-  build:
+permissions:
+  contents: read
 
-    runs-on: ubuntu-latest
+jobs:
+  receiver:
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
-
+        os: [windows-latest, ubuntu-latest]
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-    - name: Install package
-      run: |
-        pip install -e .
-    - name: Check format with isort
-      run: |
-        pip install isort
-        isort -c opendrop/**.py
-    - name: Check format with black
-      run: |
-        pip install black
-        black . --check --diff
-    - name: Lint with flake8
-      run: |
-        pip install flake8
-        flake8 . --count --show-source --statistics
-    - name: Lint with pylint
-      run: |
-        pip install pylint
-        pylint --rcfile=setup.cfg opendrop
-    - name: Test with pytest
-      run: |
-        pip install pytest
-        pytest
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install receiver and test dependencies
+        run: python -m pip install -e . pytest
+      - name: Test receiver protocol (no radio)
+        run: python -m pytest tests/windows -q
+      - name: Build portable firmware parser (no driver installation)
+        run: |
+          cmake -S native/intel -B build/native
+          cmake --build build/native --config Release
+      - name: Test native firmware parser (no hardware)
+        run: python -m pytest tests/native -q
+
+  awdl-adapters:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Check Rust formatting
+        run: cargo fmt --manifest-path native/awdl/Cargo.toml -- --check
+      - name: Test shared packet codecs and AWDL queues (no hardware)
+        run: cargo test --locked --manifest-path native/awdl/Cargo.toml
+      - name: Lint Windows adapters
+        run: cargo clippy --locked --manifest-path native/awdl/Cargo.toml --all-targets -- -D warnings

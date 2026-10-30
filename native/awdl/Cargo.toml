@@ -1,0 +1,19 @@
+[package]
+name = "opendrop-awdl-windows"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "GPL-3.0-or-later"
+publish = false
+
+[dependencies]
+owly-awdl = { git = "https://github.com/t4t5/owly", rev = "9a676e11d011c34ea32798a2541f2b1eeb66e731", features = ["driver"] }
+tokio = { version = "1", features = ["rt", "sync", "time", "macros"] }
+tracing = "0.1"
+
+[target.'cfg(windows)'.dependencies]
+sha2 = "0.10.9"
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Threading", "Win32_System_LibraryLoader", "Win32_NetworkManagement_IpHelper", "Win32_NetworkManagement_Ndis"] }
+
+[build-dependencies]
+cc = "1"
