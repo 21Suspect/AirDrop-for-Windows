@@ -143,7 +143,14 @@ if ($Mode -eq 'Restore') {
             if ($LASTEXITCODE -ne 0) { throw "Could not remove test driver package $($taskPackage.Driver)." }
         }
         if ($taskState.CertificateThumbprint) {
-            foreach($taskStore in @('Cert:\LocalMachine\Root','Cert:\LocalMachine\TrustedPublisher','Cert:\CurrentUser\My')) {
+            if($taskState.CertificateThumbprint -notmatch '^[A-Fa-f0-9]{40}$') { throw 'Invalid saved certificate thumbprint.' }
+            $taskCleanupStores=if($null -ne $taskState.CertificateStores) { @($taskState.CertificateStores) } else {
+                @('Cert:\LocalMachine\Root','Cert:\LocalMachine\TrustedPublisher','Cert:\CurrentUser\My')
+            }
+            foreach($taskStore in $taskCleanupStores) {
+                if($taskStore -notin @('Cert:\LocalMachine\Root','Cert:\LocalMachine\TrustedPublisher','Cert:\CurrentUser\My')) {
+                    throw 'Invalid saved certificate store.'
+                }
                 $taskCertPath=Join-Path $taskStore $taskState.CertificateThumbprint
                 if(Test-Path -LiteralPath $taskCertPath) { Remove-Item -LiteralPath $taskCertPath -Force }
             }
@@ -182,9 +189,16 @@ if(Test-Path -LiteralPath $StatePath) { throw 'Use a fresh state path for each t
 $BuildDirectory=(Resolve-Path -LiteralPath $BuildDirectory).Path
 $taskPackageName=if($DriverKind -eq 'KMDF') {'opendrop_ax211_km'} else {'opendrop_ax211'}
 $taskBinaryExtension=if($DriverKind -eq 'KMDF') {'sys'} else {'dll'}
-$taskBuildInfo=Get-Content -LiteralPath "$BuildDirectory\build.json" -Raw | ConvertFrom-Json
-$taskInf2Cat=Join-Path $taskBuildInfo.WdkRoot 'bin\10.0.26100.0\x86\Inf2Cat.exe'
-if(-not (Test-Path -LiteralPath $taskInf2Cat)) { throw 'The WDK used by this build is no longer available.' }
+$taskRelease=$null
+if(Test-Path -LiteralPath "$BuildDirectory\release-driver.json") {
+    if($DriverKind -ne 'KMDF') { throw 'The prebuilt package only supports KMDF.' }
+    . "$PSScriptRoot\Release-Driver.ps1"
+    $taskRelease=Get-ReleaseDriverMetadata $BuildDirectory
+} else {
+    $taskBuildInfo=Get-Content -LiteralPath "$BuildDirectory\build.json" -Raw | ConvertFrom-Json
+    $taskInf2Cat=Join-Path $taskBuildInfo.WdkRoot 'bin\10.0.26100.0\x86\Inf2Cat.exe'
+    if(-not (Test-Path -LiteralPath $taskInf2Cat)) { throw 'The WDK used by this build is no longer available.' }
+}
 if($DriverKind -eq 'KMDF') {
     Add-Type -TypeDefinition @'
 using System;
@@ -273,6 +287,7 @@ $taskState=[pscustomobject]@{
     RestoredInf=''; RestoredProblemCode=-1; StartedUtc=[DateTime]::UtcNow.ToString('o')
     StartedBootUtc=(Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToUniversalTime().ToString('o')
     TestProblemCode=-1; TestProblemStatus=0
+    CertificateStores=@()
     FinishedUtc=''; ProbeExitCode=-1; InstallError=''; WatchdogPid=0; TestInf=''
     AppSession=[bool]$AppSession; DeviceName=$DeviceName
     ReceiverTest=[bool]$ReceiverTest
@@ -281,32 +296,52 @@ $taskState=[pscustomobject]@{
 Save-State $taskState
 $taskFailed=$true
 try {
-    $taskCertificate=New-SelfSignedCertificate -Type CodeSigningCert -Subject 'CN=OpenDrop AX211 temporary hardware test' -CertStoreLocation Cert:\CurrentUser\My -NotAfter (Get-Date).AddDays(3) -KeyExportPolicy NonExportable -HashAlgorithm SHA256
-    $taskState.CertificateThumbprint=$taskCertificate.Thumbprint
-    Save-State $taskState
-    $taskPublicCert=Join-Path $taskStateDir 'test-signing.cer'
-    $null=Export-Certificate -Cert $taskCertificate -FilePath $taskPublicCert
-    $taskKit=Join-Path ([Environment]::GetEnvironmentVariable('ProgramFiles(x86)')) 'Windows Kits\10'
-    $taskSignTool=Get-ChildItem -Path "$taskKit\bin\*\x64\signtool.exe" |
-        Sort-Object FullName | Select-Object -Last 1 -ExpandProperty FullName
-    if(-not $taskSignTool) { throw 'signtool not found.' }
-    & $taskSignTool sign /sha1 $taskCertificate.Thumbprint /fd SHA256 "$BuildDirectory\$taskPackageName.$taskBinaryExtension"
-    if($LASTEXITCODE) { throw 'DLL signing failed.' }
-    # Catalog must be regenerated after signing changes the DLL's bytes.
-    if(-not (Test-Path -LiteralPath $taskInf2Cat)) { throw 'Inf2Cat not found: build with the local WDK first.' }
-    & $taskInf2Cat "/driver:$BuildDirectory" /os:10_X64 /uselocaltime
-    if($LASTEXITCODE) { throw 'Signed DLL catalog generation failed.' }
-    & $taskSignTool sign /sha1 $taskCertificate.Thumbprint /fd SHA256 "$BuildDirectory\$taskPackageName.cat"
-    if($LASTEXITCODE) { throw 'Catalog signing failed.' }
+    if($taskRelease) {
+        $taskState.CertificateThumbprint=$taskRelease.thumbprint
+        $taskPublicCert=Join-Path $BuildDirectory 'release.cer'
+        Save-State $taskState
+    } else {
+        $taskCertificate=New-SelfSignedCertificate -Type CodeSigningCert -Subject 'CN=OpenDrop AX211 temporary hardware test' -CertStoreLocation Cert:\CurrentUser\My -NotAfter (Get-Date).AddDays(3) -KeyExportPolicy NonExportable -HashAlgorithm SHA256
+        $taskState.CertificateThumbprint=$taskCertificate.Thumbprint
+        $taskState.CertificateStores=@('Cert:\CurrentUser\My')
+        Save-State $taskState
+        $taskPublicCert=Join-Path $taskStateDir 'test-signing.cer'
+        $null=Export-Certificate -Cert $taskCertificate -FilePath $taskPublicCert
+        $taskKit=Join-Path ([Environment]::GetEnvironmentVariable('ProgramFiles(x86)')) 'Windows Kits\10'
+        $taskSignTool=Get-ChildItem -Path "$taskKit\bin\*\x64\signtool.exe" |
+            Sort-Object FullName | Select-Object -Last 1 -ExpandProperty FullName
+        if(-not $taskSignTool) { throw 'signtool not found.' }
+        & $taskSignTool sign /sha1 $taskCertificate.Thumbprint /fd SHA256 "$BuildDirectory\$taskPackageName.$taskBinaryExtension"
+        if($LASTEXITCODE) { throw 'DLL signing failed.' }
+        # Catalog must be regenerated after signing changes the DLL's bytes.
+        if(-not (Test-Path -LiteralPath $taskInf2Cat)) { throw 'Inf2Cat not found: build with the local WDK first.' }
+        & $taskInf2Cat "/driver:$BuildDirectory" /os:10_X64 /uselocaltime
+        if($LASTEXITCODE) { throw 'Signed DLL catalog generation failed.' }
+        & $taskSignTool sign /sha1 $taskCertificate.Thumbprint /fd SHA256 "$BuildDirectory\$taskPackageName.cat"
+        if($LASTEXITCODE) { throw 'Catalog signing failed.' }
+        $taskState.CertificateStores=@('Cert:\CurrentUser\My')
+        Save-State $taskState
+    }
     $taskWatchArgs=@('-NoProfile','-ExecutionPolicy','Bypass','-File',('"' + $PSCommandPath + '"'),
         '-Mode','Restore','-StatePath',('"' + $StatePath + '"'),'-DelaySeconds','180')
     $taskWatch=Start-Process -FilePath "$env:windir\System32\WindowsPowerShell\v1.0\powershell.exe" -ArgumentList $taskWatchArgs -WindowStyle Hidden -PassThru
     $taskState.WatchdogPid=$taskWatch.Id
     Save-State $taskState
-    $null=Import-Certificate -FilePath $taskPublicCert -CertStoreLocation Cert:\LocalMachine\Root
-    $null=Import-Certificate -FilePath $taskPublicCert -CertStoreLocation Cert:\LocalMachine\TrustedPublisher
-    & $taskSignTool verify /pa "$BuildDirectory\$taskPackageName.cat"
-    if($LASTEXITCODE) { throw 'Catalog signature verification failed.' }
+    foreach($taskStore in @('Cert:\LocalMachine\Root','Cert:\LocalMachine\TrustedPublisher')) {
+        if(-not(Test-Path -LiteralPath (Join-Path $taskStore $taskState.CertificateThumbprint))) {
+            # Journal ownership before import so an interrupted import is recoverable.
+            $taskState.CertificateStores=@($taskState.CertificateStores)+$taskStore
+            Save-State $taskState
+            $null=Import-Certificate -FilePath $taskPublicCert -CertStoreLocation $taskStore
+        }
+    }
+    foreach($taskSigned in @("$taskPackageName.$taskBinaryExtension","$taskPackageName.cat")) {
+        $taskSignature=Get-AuthenticodeSignature -LiteralPath (Join-Path $BuildDirectory $taskSigned)
+        if($taskSignature.Status -ne 'Valid' -or
+           $taskSignature.SignerCertificate.Thumbprint -ne $taskState.CertificateThumbprint) {
+            throw "Driver signature verification failed: $taskSigned"
+        }
+    }
     Assert-AppLease
     $taskState.InstallNeedsReboot=Install-ExactDriver $taskHardware "$BuildDirectory\$taskPackageName.inf"
     $taskState.TestInf=Device-Value $taskDevice.InstanceId 'DEVPKEY_Device_DriverInfPath'

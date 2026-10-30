@@ -66,7 +66,7 @@ requires this flow cannot currently complete pairing with the app.
 ## Current limits
 
 The custom driver still requires Test Mode, the exact tested AX211 device,
-working Ethernet and the local SDK/WDK signing tools. Wi-Fi cannot provide
+working Ethernet. The EXE release includes a prebuilt test-signed driver; SDK/WDK signing tools are only needed for developer builds. Wi-Fi cannot provide
 ordinary networking while the radio is in AirDrop use. Channel 6 and the
 verified MAC address are still fixed. The radio data path and throughput have
 not been redesigned by the desktop app.
@@ -102,10 +102,7 @@ native/intel/README.md and native/awdl/README.md. Then run:
 
 app/build.py uses the installed .NET Framework 4.8 compiler and Windows SDK
 WinRT metadata. package_windows_app.py bundles the Python runtime so the
-person running the app does not need a separate Python installation. The
-temporary development-driver signing step still depends on SDK/WDK paths
-in the supplied driver's build.json. This local package is not yet a general
-installer or a public redistribution package.
+person running the app does not need a separate Python installation. The local developer-signing path depends on SDK/WDK paths in build.json. The public EXE instead bundles a pre-signed test driver and checks hardware/prerequisites during setup; see INSTALL.md.
 
 ## Protocol attribution
 

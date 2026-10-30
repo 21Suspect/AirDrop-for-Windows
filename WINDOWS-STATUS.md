@@ -33,3 +33,9 @@ Publication checks on Windows: **86 Windows tests passed; 341 native/helper test
 Run the commands in [INSTALL.md](INSTALL.md#software-checks-without-radio-access) for current counts. GitHub Actions runs software tests only; it cannot validate AX211 radio behavior, Windows driver installation, Bluetooth or an Apple transfer.
 
 See [LIMITATIONS.md](LIMITATIONS.md) for unsupported features and deployment limits.
+
+## Downloadable installer preview
+
+The EXE bundles a prebuilt test-signed driver and all runtime components. Setup detects hardware, current boot requirements and connectivity, rejects unsupported hardware, and refuses installation while the desktop app is running. Removal also rejects unfinished recovery. Test Mode preparation is optional, explicitly confirmed and never restarts the machine.
+
+Publication validation includes 100 Windows tests (staging, unsupported devices, 32-bit host detection, recovery state and damaged release manifests), 341 native/helper tests with 3 optional skips, and successful driver/app/installer compilation. The wizard is checked on the development PC. A clean-machine installation and a radio transfer using the newly packaged pre-signed driver path have not yet been validated. The earlier actual phone/Mac transfers used the same radio implementation through local developer signing.

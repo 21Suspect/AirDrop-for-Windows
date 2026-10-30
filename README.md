@@ -2,16 +2,16 @@
 
 An experimental Windows desktop app that sends and receives files through Apple's native AirDrop sheet, using an Intel AX211, a custom Windows driver, and [Owly](https://github.com/t4t5/owly).
 
-**Working on one tested PC. Not a general Windows AirDrop release.** Real iPhone → PC photos/videos, PC → iPhone photos, and Mac → PC PDF transfers have succeeded. Compatibility with other computers and Apple software versions is unverified.
+**Experimental preview for one tested hardware configuration.** Real iPhone → PC photos/videos, PC → iPhone photos, and Mac → PC PDF transfers have succeeded. Compatibility with other computers and Apple software versions is unverified.
 
-**[Installation and build instructions](INSTALL.md) · [Limitations](LIMITATIONS.md) · [App guide](DESKTOP-APP.md) · [Validation](WINDOWS-STATUS.md)**
+**[Download the installer](https://github.com/21Suspect/AirDrop-for-Windows/releases) · [Installation and build instructions](INSTALL.md) · [Limitations](LIMITATIONS.md) · [App guide](DESKTOP-APP.md) · [Validation](WINDOWS-STATUS.md)**
 
 ## Before you install
 
-- Windows 11 x64 and the exact AX211 hardware ID below are the only tested configuration.
+- Windows 11 24H2 or newer on x64 and the exact AX211 hardware ID below are the only tested configuration.
 - The custom kernel driver currently requires **Windows Test Mode**, administrator access, and Secure Boot off.
 - **Ordinary Wi-Fi is unavailable while AirDrop is on.** A connected Ethernet adapter is required by the launcher.
-- There is **no ready-to-install binary release**. Build locally with the Windows SDK/WDK, C++ tools, Rust and Python. The SDK/WDK must remain available for temporary driver signing.
+- A **single EXE installer** includes the app, Python runtime and prebuilt test-signed driver. It detects hardware and boot prerequisites; users do not need Python, Rust, SDK or WDK. Test Mode is still required.
 - **Incoming files from anyone nearby are accepted automatically by default.** Turn on **Ask before receiving** in Settings if you want approval prompts.
 - This is experimental kernel/radio software. Crashes, lost connectivity and recovery requiring a restart remain possible.
 
@@ -53,7 +53,7 @@ Bluetooth supplies a discovery wakeup advertisement; file data travels over Wi-F
 
 ## Development and attribution
 
-Start with [INSTALL.md](INSTALL.md) for a complete local build. [Native notes](native/README.md) explain the lower layers. Automated tests exercise protocol validation and software queues; they do not establish hardware compatibility.
+Start with [INSTALL.md](INSTALL.md) for the installer or a complete local build. [Native notes](native/README.md) explain the lower layers. Automated tests exercise protocol validation and software queues; they do not establish hardware compatibility.
 
 This fork builds on [seemoo-lab/OpenDrop](https://github.com/seemoo-lab/opendrop), base commit 11fe7ba7861093b302bc0637e8cb10adf2d29337, and uses [t4t5/Owly](https://github.com/t4t5/owly) at pinned commit 9a676e11d011c34ea32798a2541f2b1eeb66e731. Original source history, notices, [GPL license](LICENSE) and [upstream documentation](README-UPSTREAM.md) are retained. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) and [Intel provenance](native/intel/PROVENANCE.md).
 

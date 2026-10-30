@@ -1,8 +1,25 @@
-# Installation and local build
+# Installation
 
-This is a **source-only developer preview**, not an installer for arbitrary Windows PCs. The full app must be built on the computer where it will run: its temporary driver-signing process still uses local SDK/WDK paths. Installing the PyPI opendrop package alone will not make Windows appear in AirDrop.
+## Download the EXE
 
-Read [LIMITATIONS.md](LIMITATIONS.md) first. No command in the build sections installs a driver or changes boot settings.
+1. Open [GitHub Releases](https://github.com/21Suspect/AirDrop-for-Windows/releases) and download **AirDrop-for-Windows-Setup-0.2.0-preview.1-x64.exe**.
+2. Close any running AirDrop for Windows app and allow Wi-Fi restoration to finish.
+3. Run the installer normally. It checks the exact AX211, Windows version, Test Mode, Secure Boot, Ethernet and Bluetooth. Unsupported hardware is rejected.
+4. Review the detected requirements and install. No separate Python, Rust, SDK or WDK is needed.
+5. If Test Mode is not enabled, setup offers an **unchecked, optional** preparation step. This requires administrator approval, explains the security change, saves a BCD backup and requires a manual restart. It refuses Secure Boot-enabled or encrypted systems. Secure Boot changes, encryption management and restarts are not automated.
+6. Open the installed app from Start, connect Ethernet, disconnect ordinary Wi-Fi, keep Bluetooth on and choose **Turn on**. Approve the radio helper. It installs the bundled test driver for the session and restores Intel's driver on shutdown.
+
+The installer installs per user under %LOCALAPPDATA%/Programs/AirDrop for Windows, creates a Start shortcut, offers a desktop shortcut and registers an uninstaller. Files received and app settings are kept separately. Updates refuse to proceed while the app is running; uninstall also refuses unresolved radio recovery.
+
+This is a **test-signed preview**, not a Microsoft-certified driver. Windows may show an unknown-publisher or SmartScreen warning for the installer because it has no commercial signing certificate or established reputation. Check that you downloaded the expected GitHub release and compare SHA256SUMS.txt if verifying the artifact. Do not disable antivirus or system-wide download protection.
+
+Setup can install the app even when networking or boot preparation remains necessary; that does not mean the radio is ready. The helper checks prerequisites again on startup. Auto-accept from nearby devices remains the default; enable **Ask before receiving** in Settings if desired.
+
+Read [LIMITATIONS.md](LIMITATIONS.md). The rest of this page documents hardware requirements, optional building, usage and recovery.
+
+## Build from source (optional)
+
+Building is only needed for development. The public installer already includes all runtime components. Developer builds may use local SDK/WDK signing; a pre-signed preview package removes that runtime dependency.
 
 ## 1. Check the hardware
 
@@ -170,3 +187,21 @@ To leave Test Mode, first stop/recover the app. Run the supplied helper with -Mo
 - **Recovery pending:** preserve the session directory and follow the recovery section.
 
 For an issue, include Windows version, adapter hardware ID, app/source commit and a short reproduction. Redact local usernames, filenames, peer names, paths and certificates/keys from logs. Never upload received personal files or an entire session directory.
+
+## Build a downloadable preview installer
+
+On the build machine, first build the driver and app dependencies as above. Create or select a **non-exportable local code-signing test certificate** in CurrentUser/My, retaining its private key only on the build machine. The public package contains only its public certificate. This signature does not enable normal Windows driver trust.
+
+~~~powershell
+./tools/Build-ReleaseDriver.ps1 -DriverDirectory "$buildRoot\kernel" -OutputDirectory "$buildRoot\release-driver" -CertificateThumbprint YOUR_TEST_CERTIFICATE_THUMBPRINT
+~~~
+
+Run tools/package_windows_app.py with --driver pointing to release-driver and a fresh --output directory. It detects the signed package, includes its catalog/public certificate and omits build.json. The runtime validates hashes and signatures, temporarily imports only missing certificate trust entries for that session, and removes only entries it added after restoration.
+
+Install [Inno Setup](https://jrsoftware.org/isdl.php) on the build machine and compile:
+
+~~~powershell
+ISCC.exe "/DPackageDir=$buildRoot\app" "/DOutputPath=$buildRoot\release" installer/AirDrop.iss
+~~~
+
+Build with Python 3.11 or later. Run cargo fetch --locked --manifest-path native/awdl/Cargo.toml to obtain all locked dependency notices. Cargo dependencies must be in the normal user Cargo cache so the packager can retain their notices. Keep the bundled Intel, Wintun, Owly, Python and Rust dependency notices. Publish the matching source revision and SHA256 checksums with the EXE. Never upload signing private keys, local build.json files or session data.

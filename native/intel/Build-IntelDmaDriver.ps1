@@ -32,7 +32,7 @@ try {
         & $taskCl /nologo /c /std:c11 /W4 /WX /kernel /O2 /GS /guard:cf /Zl /Zi /D_AMD64_ /DAMD64 "$PSScriptRoot\$taskUnit.c" "/Fo$OutDir\$taskUnit.obj" "/Fd$OutDir\$taskUnit.pdb"
         if($LASTEXITCODE) { throw "Initialization component compilation failed: $LASTEXITCODE" }
     }
-    & $taskLink /nologo /DRIVER /SUBSYSTEM:NATIVE /ENTRY:FxDriverEntry /NODEFAULTLIB /INTEGRITYCHECK /DYNAMICBASE /NXCOMPAT /RELEASE /GUARD:CF /DEBUG /INCREMENTAL:NO /OPT:REF /OPT:ICF "/OUT:$OutDir\opendrop_ax211_km.sys" "/PDB:$OutDir\opendrop_ax211_km.pdb" "$OutDir\ax211_kmdf.obj" "$OutDir\iwl_firmware.obj" "$OutDir\iwl_hw.obj" "$OutDir\iwl_gen3.obj" "$OutDir\iwl_metadata.obj" "$OutDir\iwl_response.obj" "$OutDir\iwl_pnvm.obj" "$OutDir\iwl_command.obj" "$OutDir\iwl_packet.obj" "$OutDir\iwl_radio.obj" WdfDriverEntry.lib WdfLdr.lib ntoskrnl.lib hal.lib BufferOverflowFastFailK.lib
+    & $taskLink /nologo /DRIVER /SUBSYSTEM:NATIVE /ENTRY:FxDriverEntry /NODEFAULTLIB /INTEGRITYCHECK /DYNAMICBASE /NXCOMPAT /RELEASE /GUARD:CF /DEBUG '/PDBALTPATH:%_PDB%' /INCREMENTAL:NO /OPT:REF /OPT:ICF "/OUT:$OutDir\opendrop_ax211_km.sys" "/PDB:$OutDir\opendrop_ax211_km.pdb" "$OutDir\ax211_kmdf.obj" "$OutDir\iwl_firmware.obj" "$OutDir\iwl_hw.obj" "$OutDir\iwl_gen3.obj" "$OutDir\iwl_metadata.obj" "$OutDir\iwl_response.obj" "$OutDir\iwl_pnvm.obj" "$OutDir\iwl_command.obj" "$OutDir\iwl_packet.obj" "$OutDir\iwl_radio.obj" WdfDriverEntry.lib WdfLdr.lib ntoskrnl.lib hal.lib BufferOverflowFastFailK.lib
     if($LASTEXITCODE) { throw "Kernel linking failed: $LASTEXITCODE" }
     Copy-Item -LiteralPath "$PSScriptRoot\opendrop_ax211_km.inf" -Destination $OutDir
     & "$WdkRoot\tools\10.0.26100.0\x64\infverif.exe" /w "$OutDir\opendrop_ax211_km.inf"

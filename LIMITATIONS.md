@@ -18,7 +18,9 @@ This describes the implementation published on 2026-10-30, not promised future f
 
 ## Driver trust and installation
 
-The app uses a custom KMDF kernel driver that is not Microsoft production-signed. The current launch path checks for Windows Test Mode and creates a short-lived local test-signing certificate. It requires the original SDK/WDK paths recorded in build.json, administrative permission and a disconnected target Wi-Fi adapter. There is no consumer installer, portable binary package, automatic updater or universal hardware support.
+The installer detects unsupported hardware and guides Test Mode preparation. It cannot make other radios compatible, modify Secure Boot or remove the need for a restart after boot changes. The installer is not commercially Authenticode-signed and may trigger SmartScreen/unknown-publisher prompts.
+
+The app uses a custom KMDF kernel driver that is not Microsoft production-signed. The current launch path checks for Windows Test Mode and temporarily trusts the bundled preview test certificate for a radio session (or creates a local certificate in developer builds). The downloadable EXE includes a prebuilt test-signed driver and needs no SDK/WDK at runtime. The radio helper still requires administrative permission and a disconnected target Wi-Fi adapter. Local developer builds can still use SDK/WDK signing. There is no automatic updater or universal hardware support.
 
 Test Mode relaxes the normal driver trust requirement. The current route needs Secure Boot off, displays a watermark and can conflict with software that enforces normal boot integrity. Turning Test Mode off prevents this driver from starting after reboot. Test Mode does not itself require turning off antivirus; this project does not instruct users to disable Defender.
 

@@ -12,6 +12,6 @@ This Windows fork retains OpenDrop's GPL-3.0-or-later licensing and original aut
 | Python/Rust dependencies | Installed separately from requirements/setup.py and Cargo.lock; retain their respective licenses |
 | Microsoft SDK/WDK/tools | Installed separately; not redistributed here |
 
-The app packager retains the Intel firmware, Wintun and Owly notices next to a locally built package. Publishing a binary distribution needs a separate review of all bundled runtime/dependency notices. The first public publication is source only; it contains no signing private keys, firmware binaries, vendor-driver backups or received personal files.
+The app packager retains the Intel firmware, Wintun and Owly notices next to a locally built package. The preview EXE includes Python/runtime and Rust dependency notices under licenses. Intel firmware and the official Wintun binary are bundled unmodified with their notices. The source tree excludes these binaries; the public package contains no signing private keys, vendor-driver backups or received personal files. The matching source revision is published alongside the binary release.
 
 AirDrop is an Apple trademark. The name describes interoperability; it does not imply Apple endorsement.

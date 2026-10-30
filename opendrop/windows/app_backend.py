@@ -103,7 +103,7 @@ class Controller:
             except (OSError, ValueError, KeyError):
                 pass
         self.emit("hello", settings=self.settings, history=self.history, status=self.status,
-                  recovery=str(self.previous or ""), version="0.2.0-dev")
+                  recovery=str(self.previous or ""), version="0.2.0-preview.1")
         self.guardian = threading.Thread(target=self._guard, daemon=True)
         self.guardian.start()
 
@@ -319,9 +319,15 @@ class Controller:
         session.mkdir(parents=True)
         shutil.copytree(self.config["intel_source"], session / "src")
         (session / "kernel").mkdir()
-        for file in ("opendrop_ax211_km.sys", "opendrop_ax211_km.inf", "build.json",
-                     "ax211-probe.exe", "ax211-stage.exe", "awdl-host.exe", "radio-check.exe"):
-            shutil.copy2(Path(self.config["driver"]) / file, session / "kernel" / file)
+        driver = Path(self.config["driver"])
+        files = ["opendrop_ax211_km.sys", "opendrop_ax211_km.inf",
+                 "ax211-probe.exe", "ax211-stage.exe", "awdl-host.exe", "radio-check.exe"]
+        if (driver / "release-driver.json").is_file():
+            files += ["release-driver.json", "release.cer", "opendrop_ax211_km.cat"]
+        else:
+            files += ["build.json"]
+        for file in files:
+            shutil.copy2(driver / file, session / "kernel" / file)
         config = {key: self.config[key] for key in ("firmware", "pnvm", "wintun")}
         config.update(program=sys.executable if getattr(sys, "frozen", False) else sys._base_executable,
                       name=self.settings["name"])
