@@ -2,7 +2,7 @@
 
 An experimental Windows desktop app that sends and receives files through Apple's native AirDrop sheet, using an Intel AX211, a custom Windows driver, and [Owly](https://github.com/t4t5/owly).
 
-**Experimental preview for one tested hardware configuration.** Real iPhone → PC photos/videos, PC → iPhone photos, and Mac → PC PDF transfers have succeeded. Compatibility with other computers and Apple software versions is unverified.
+Compatibility with other computers and Apple software versions is unverified.
 
 **[Download the installer](https://github.com/21Suspect/AirDrop-for-Windows/releases) · [Installation and build instructions](INSTALL.md) · [Limitations](LIMITATIONS.md) · [App guide](DESKTOP-APP.md) · [Validation](WINDOWS-STATUS.md)**
 
